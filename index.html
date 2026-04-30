@@ -2,7 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+<!-- ✅ BLOQUEO DE ZOOM -->
+<meta name="viewport"
+      content="width=device-width,
+               height=device-height,
+               initial-scale=1.0,
+               maximum-scale=1.0,
+               user-scalable=no">
+
 <title>Escape de la Matrix</title>
 
 <style>
@@ -11,8 +19,12 @@ html, body {
     padding: 0;
     background: black;
     overflow: hidden;
-    touch-action: none;
     font-family: monospace;
+
+    /* ✅ evita doble tap zoom */
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #wrapper {
@@ -39,7 +51,7 @@ canvas {
     z-index: 5;
 }
 
-/* CONTROLES SEPARADOS */
+/* CONTROLES */
 .control-btn {
     position: absolute;
     bottom: 24px;
@@ -50,20 +62,19 @@ canvas {
     border: 2px solid #00ff00;
     color: #00ff00;
     font-size: 48px;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    /* ✅ MUY IMPORTANTE */
+    touch-action: none;
+    -webkit-user-select: none;
     user-select: none;
-    z-index: 6;
 }
 
-#left {
-    left: 24px;
-}
-
-#right {
-    right: 24px;
-}
+#left { left: 24px; }
+#right { right: 24px; }
 
 /* GAME OVER */
 #gameOver {
@@ -80,6 +91,7 @@ canvas {
 }
 </style>
 </head>
+
 <body>
 
 <div id="hud">TIEMPO: <span id="score">0</span></div>
@@ -100,7 +112,7 @@ canvas {
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ===== MATRIX RAIN =====
+/* ===== MATRIX RAIN ===== */
 const fontSize = 20;
 const columns = Math.floor(canvas.width / fontSize);
 const drops = Array(columns).fill(1);
@@ -112,8 +124,8 @@ function drawMatrix() {
     ctx.font = fontSize + "px monospace";
 
     for (let i = 0; i < drops.length; i++) {
-        const char = Math.random() > 0.5 ? "0" : "1";
-        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        const c = Math.random() > 0.5 ? "0" : "1";
+        ctx.fillText(c, i * fontSize, drops[i] * fontSize);
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.97) {
             drops[i] = 0;
         }
@@ -121,29 +133,46 @@ function drawMatrix() {
     }
 }
 
-// ===== PLAYER (5x MÁS GRANDE) =====
+/* ===== PLAYER ===== */
 const playerImg = new Image();
 playerImg.src = "player.png";
 
 const player = {
     w: 220,
-    h: 360, // GRANDE, VERTICAL
+    h: 360,
     x: canvas.width / 2 - 110,
     y: canvas.height - 420,
     speed: 10
 };
 
-// ===== CONTROLS =====
+/* ===== CONTROLS (ANTI ZOOM) ===== */
 let moveLeft = false;
 let moveRight = false;
 
-document.getElementById("left").addEventListener("touchstart", () => moveLeft = true);
-document.getElementById("left").addEventListener("touchend", () => moveLeft = false);
+const leftBtn = document.getElementById("left");
+const rightBtn = document.getElementById("right");
 
-document.getElementById("right").addEventListener("touchstart", () => moveRight = true);
-document.getElementById("right").addEventListener("touchend", () => moveRight = false);
+leftBtn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    moveLeft = true;
+});
 
-// ===== ENEMIES =====
+leftBtn.addEventListener("touchend", e => {
+    e.preventDefault();
+    moveLeft = false;
+});
+
+rightBtn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    moveRight = true;
+});
+
+rightBtn.addEventListener("touchend", e => {
+    e.preventDefault();
+    moveRight = false;
+});
+
+/* ===== ENEMIES ===== */
 const enemies = [];
 
 function spawnEnemy() {
@@ -155,7 +184,7 @@ function spawnEnemy() {
     });
 }
 
-// ===== GAME LOOP =====
+/* ===== GAME LOOP ===== */
 let score = 0;
 let running = true;
 
@@ -163,7 +192,8 @@ function update() {
     if (!running) return;
 
     if (moveLeft && player.x > 0) player.x -= player.speed;
-    if (moveRight && player.x + player.w < canvas.width) player.x += player.speed;
+    if (moveRight && player.x + player.w < canvas.width)
+        player.x += player.speed;
 
     enemies.forEach(e => {
         e.y += e.v;
