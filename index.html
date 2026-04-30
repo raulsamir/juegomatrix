@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 
-<!-- ✅ BLOQUEO DE ZOOM -->
 <meta name="viewport"
       content="width=device-width,
                height=device-height,
@@ -20,13 +19,9 @@ html, body {
     background: black;
     overflow: hidden;
     font-family: monospace;
-
-    /* ✅ evita doble tap zoom */
-    touch-action: none;
-    -webkit-user-select: none;
-    user-select: none;
 }
 
+/* ===== CANVAS SCALE ===== */
 #wrapper {
     width: 100vw;
     height: 100vh;
@@ -36,9 +31,16 @@ html, body {
 }
 
 canvas {
-    width: auto;
     height: 100%;
+    width: auto;
     max-width: 100%;
+}
+
+/* ===== UI LAYER ===== */
+#ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none; /* solo botones reciben eventos */
 }
 
 /* HUD */
@@ -48,29 +50,29 @@ canvas {
     left: 16px;
     color: #00ff00;
     font-size: 24px;
-    z-index: 5;
 }
 
-/* CONTROLES */
+/* BOTONES */
 .control-btn {
     position: absolute;
     bottom: 24px;
-    width: 110px;
-    height: 110px;
+
+    width: 88px;
+    height: 88px;
+
     border-radius: 14px;
-    background: rgba(0,0,0,0.6);
     border: 2px solid #00ff00;
+    background: rgba(0,0,0,0.6);
     color: #00ff00;
-    font-size: 48px;
+    font-size: 40px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    /* ✅ MUY IMPORTANTE */
-    touch-action: none;
-    -webkit-user-select: none;
+    pointer-events: auto;
     user-select: none;
+    touch-action: none;
 }
 
 #left { left: 24px; }
@@ -78,7 +80,7 @@ canvas {
 
 /* GAME OVER */
 #gameOver {
-    position: absolute;
+    position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.9);
     color: #00ff00;
@@ -87,17 +89,19 @@ canvas {
     justify-content: center;
     flex-direction: column;
     font-size: 36px;
-    z-index: 10;
+    z-index: 20;
 }
 </style>
 </head>
 
 <body>
 
-<div id="hud">TIEMPO: <span id="score">0</span></div>
+<div id="ui">
+    <div id="hud">TIEMPO: <span id="score">0</span></div>
 
-<div id="left" class="control-btn">◀</div>
-<div id="right" class="control-btn">▶</div>
+    <div id="left" class="control-btn">◀</div>
+    <div id="right" class="control-btn">▶</div>
+</div>
 
 <div id="gameOver">
     <div>LA MATRIX TE ATRAPÓ</div>
@@ -145,32 +149,20 @@ const player = {
     speed: 10
 };
 
-/* ===== CONTROLS (ANTI ZOOM) ===== */
+/* ===== CONTROLS ===== */
 let moveLeft = false;
 let moveRight = false;
+
+function prevent(e){ e.preventDefault(); }
 
 const leftBtn = document.getElementById("left");
 const rightBtn = document.getElementById("right");
 
-leftBtn.addEventListener("touchstart", e => {
-    e.preventDefault();
-    moveLeft = true;
-});
+leftBtn.addEventListener("touchstart", e => { prevent(e); moveLeft = true; });
+leftBtn.addEventListener("touchend",   e => { prevent(e); moveLeft = false; });
 
-leftBtn.addEventListener("touchend", e => {
-    e.preventDefault();
-    moveLeft = false;
-});
-
-rightBtn.addEventListener("touchstart", e => {
-    e.preventDefault();
-    moveRight = true;
-});
-
-rightBtn.addEventListener("touchend", e => {
-    e.preventDefault();
-    moveRight = false;
-});
+rightBtn.addEventListener("touchstart", e => { prevent(e); moveRight = true; });
+rightBtn.addEventListener("touchend",   e => { prevent(e); moveRight = false; });
 
 /* ===== ENEMIES ===== */
 const enemies = [];
@@ -192,8 +184,7 @@ function update() {
     if (!running) return;
 
     if (moveLeft && player.x > 0) player.x -= player.speed;
-    if (moveRight && player.x + player.w < canvas.width)
-        player.x += player.speed;
+    if (moveRight && player.x + player.w < canvas.width) player.x += player.speed;
 
     enemies.forEach(e => {
         e.y += e.v;
