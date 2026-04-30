@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Escape de la Matrix</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    overflow: hidden;
+    touch-action: none;
+    font-family: monospace;
+}
+
+/* Contenedor para escalar sin deformar */
+#wrapper {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+}
+
+/* HUD */
+#hud {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    color: #00ff00;
+    font-size: 24px;
+    z-index: 5;
+}
+
+/* Controles juntos en una esquina */
+#controls {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    gap: 16px;
+    z-index: 5;
+}
+
+.control-btn {
+    width: 90px;
+    height: 90px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.6);
+    border: 2px solid #00ff00;
+    color: #00ff00;
+    font-size: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+}
+
+/* Game over */
+#gameOver {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.9);
+    color: #00ff00;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    font-size: 36px;
+    z-index: 10;
+}
+</style>
+</head>
+<body>
+
+<div id="hud">TIEMPO: <span id="score">0</span></div>
+
+<div id="controls">
+    <div id="left" class="control-btn">◀</div>
+    <div id="right" class="control-btn">▶</div>
+</div>
+
+<div id="gameOver">
+    <div>LA MATRIX TE ATRAPÓ</div>
+    <button onclick="location.reload()">REINTENTAR</button>
+</div>
+
+<div id="wrapper">
+    <canvas id="game" width="1080" height="1920"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+// ========= MATRIX RAIN =========
+const fontSize = 20;
+const columns = Math.floor(canvas.width / fontSize);
+const drops = Array(columns).fill(1);
+
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "#00ff00";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        const char = Math.random() > 0.5 ? "0" : "1";
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.97) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+
+// ========= PLAYER =========
+const playerImg = new Image();
+playerImg.src = "player.png";
+
+const player = {
+    x: canvas.width / 2 - 40,
+    y: canvas.height - 220,
+    w: 80,
+    h: 150, // RECTANGULAR VERTICAL
+    speed: 10
+};
+
+// ========= CONTROLS =========
+let moveLeft = false;
+let moveRight = false;
+
+document.getElementById("left").addEventListener("touchstart", () => moveLeft = true);
+document.getElementById("left").addEventListener("touchend", () => moveLeft = false);
+
+document.getElementById("right").addEventListener("touchstart", () => moveRight = true);
+document.getElementById("right").addEventListener("touchend", () => moveRight = false);
+
+// ========= ENEMIES =========
+const enemies = [];
+
+function spawnEnemy() {
+    enemies.push({
+        x: Math.random() * (canvas.width - 60),
+        y: -60,
+        s: 60,
+        v: 6 + Math.random() * 3
+    });
+}
+
+// ========= GAME LOOP =========
+let score = 0;
+let running = true;
+
+function update() {
+    if (!running) return;
+
+    if (moveLeft && player.x > 0) player.x -= player.speed;
+    if (moveRight && player.x + player.w < canvas.width) player.x += player.speed;
+
+    enemies.forEach(e => {
+        e.y += e.v;
+
+        if (
+            e.x < player.x + player.w &&
+            e.x + e.s > player.x &&
+            e.y < player.y + player.h &&
+            e.y + e.s > player.y
+        ) {
+            running = false;
+            document.getElementById("gameOver").style.display = "flex";
+        }
+    });
+
+    score++;
+    document.getElementById("score").textContent = score;
+}
+
+function draw() {
+    drawMatrix();
+    ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+    ctx.fillStyle = "red";
+    enemies.forEach(e => ctx.fillRect(e.x, e.y, e.s, e.s));
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+setInterval(spawnEnemy, 900);
+loop();
+</script>
+
+</body>
+</html>
